@@ -1,0 +1,15 @@
+name = Site Feature Strongarm
+core = 7.x
+package = Features
+dependencies[] = ctools
+dependencies[] = strongarm
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[variable][] = admin_theme
+features[variable][] = error_level
+features[variable][] = jquery_update_compression_type
+features[variable][] = jquery_update_jquery_admin_version
+features[variable][] = jquery_update_jquery_cdn
+features[variable][] = jquery_update_jquery_version
+features[variable][] = theme_default
+features[variable][] = views_ui_show_advanced_help_warning

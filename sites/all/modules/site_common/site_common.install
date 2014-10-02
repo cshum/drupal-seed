@@ -1,0 +1,378 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function site_common_install() {
+  for ($i = 7000; $i < 8000; $i++) {
+    $candidate = 'site_common_update_' . $i;
+    if (function_exists($candidate)) {
+      echo $i.' ';
+      $candidate();
+    }
+  }
+  features_rebuild();
+  features_revert();
+}
+
+/**
+ * Enabled necessary modules.
+ */
+function site_common_update_7000() {
+  $modules = array(
+    'features', 
+    'ctools',
+    'page_manager',
+    'stylizer',
+    'views_content',
+    'date',
+    'views',
+    'views_ui',
+    'devel',
+    'admin_menu',
+    'admin_menu_toolbar'
+  );
+
+  module_enable($modules);
+
+  $modules = array(
+    'toolbar',
+    'overlay',
+    'dashboard'
+  );
+  module_disable($modules);
+}
+
+/**
+ * Enable modules.
+ */
+function site_common_update_7001(){
+  $modules = array(
+    'strongarm',
+    'entity',
+    'entityreference',
+    'libraries',
+    'jquery_update'
+  );
+  module_enable($modules);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7002(){
+  $modules = array(
+    'token',
+    'ckeditor',
+    'pathauto',
+    'better_exposed_filters',
+    'filefield_sources', 
+    'plupload',
+    'filefield_sources_plupload', 
+    'draggableviews',
+    'menu_block'
+  );
+  module_enable($modules);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7003(){
+  $modules = array(
+    'context',
+    'context_ui', 
+    'context_layouts',
+    'rules',
+    'rules_admin'
+  );
+  module_enable($modules);
+  $modules = array(
+    'stylizer'
+  );
+  module_disable($modules);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7004(){
+  $enable = array(
+    'fences',
+    'r4032login',
+    'redirect',
+    'views_json',
+    'restws',
+    'restws_basic_auth',
+    'link'
+  );
+  module_enable($enable);
+  $disable = array(
+    'update'
+  );
+  module_disable($disable);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7005(){
+  $enable = array(
+    'views_data_export',
+    'entityform',
+    'session_api',
+    'entityreference_prepopulate',
+    'prepopulate',
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7006(){
+  $enable = array(
+    'entityform_anonymous',
+    'entityform_block',
+    'job_scheduler',
+    'feeds',
+    'feeds_import',
+    'feeds_ui',
+    'context_addassets',
+    'views_arg_context',
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7007(){
+  $enable = array(
+    'captcha',
+    'image_captcha',
+    'email',
+    'addressfield',
+    'field_validation',
+    'field_validation_ui',
+    'autoupload',
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7008(){
+  $enable = array(
+    'php',
+    'views_php',
+    'admin_views',
+    'views_rules',
+    'views_bulk_operations'
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7009(){
+  $enable = array(
+    'metatag',
+    'metatag_views',
+    'metatag_ui',
+    'metatag_twitter_cards',
+    'metatag_opengraph',
+    'metatag_context'
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7010(){
+  $enable = array(
+    'mailsystem',
+    'htmlmail',
+    'smtp'
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
+/**
+ * Enable Admin theme.
+ */
+function site_common_update_7011(){
+  $themes = array(
+    'adminimal'
+  );
+  theme_enable($themes);
+}
+/**
+ * Enable Feature Strongarm
+ */
+function site_common_update_7012(){
+  $enable = array(
+    'site_feature_strongarm',
+  );
+  module_enable($enable);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7013(){
+  $enable = array(
+    'date_popup',
+    'date_repeat',
+    'date_repeat_field',
+    'date_tools',
+    'date_views'
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
+/**
+ * Enable Omega theme.
+ */
+function site_common_update_7014(){
+  $themes = array(
+    'omega'
+  );
+  theme_enable($themes);
+}
+/**
+ * Enable modules.
+ */
+function site_common_update_7015(){
+  $enable = array(
+    'field_group',
+    'transliteration'
+  );
+  module_enable($enable);
+}
+/**
+ * Enable Site Theme
+ */
+function site_common_update_7016(){
+  $themes = array(
+    'site_theme'
+  );
+  theme_enable($themes);
+  variable_set('theme_default', 'site_theme');
+  $themes = array(
+    'bartik',
+    'seven'
+  );
+  theme_disable($themes);
+}
+/**
+ * Reset Blocks
+ */
+function site_common_update_7017(){
+  db_update('block')
+    ->fields(array( 'region' => -1 ))
+    ->condition('delta', 'main','<>')
+    ->execute();
+}
+/**
+ * Enable modules
+ */
+function site_common_update_7018(){
+  $enable = array(
+    'multiform'
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
+/**
+ * Enable modules
+ */
+function site_common_update_7019(){
+  $enable = array(
+    'context_date',
+    'views_php',
+    'bg_image',
+    'bg_image_context',
+    'bg_image_formatter',
+    'markup',
+    'eva',
+    'views_field_view',
+    'locale',
+    'translation',
+    'translation_helpers',
+    'variable',
+    'variable_store',
+    'variable_realm',
+    'variable_admin',
+  );
+  module_enable($enable);
+  $disable = array(
+    'comment'
+  );
+  module_disable($disable);
+}
+/**
+ * Enable translation modules
+ */
+function site_common_update_7020(){
+  $enable = array(
+    'i18n',
+    'i18n_block',
+    'i18n_menu',
+    'i18n_node',
+    'i18n_select',
+    'i18n_string',
+    'i18n_sync',
+    'i18n_taxonomy',
+    'i18n_variable',
+    'i18n_translation',
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
+/**
+ * Enable modules
+ */
+function site_common_update_7021(){
+  $enable = array(
+    'feeds_tamper',
+    'feeds_tamper_ui'
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
+/**
+ * Disable Views
+ */
+function site_common_update_7022(){
+  // a list of views (their view name) I want to disable
+  $viewnames = array(
+    'feeds_log'
+  );
+  // grab list of views that are already disabled
+  $views_status = variable_get('views_defaults', array());
+  // add our views to be disabled to the list
+  foreach ($viewnames as $key => $viewname) {
+    $views_status[$viewname] = TRUE;
+  }
+  // reset the variable with the new list
+  variable_set('views_defaults', $views_status);
+}

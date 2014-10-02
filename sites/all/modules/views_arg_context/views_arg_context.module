@@ -1,0 +1,102 @@
+<?php
+// $Id: views_arg_context.module,v 1.1.2.3 2010/10/25 20:27:58 brynbellomy Exp $
+
+/**
+ * Implements of hook_views_api().
+ */
+function views_arg_context_views_api() {
+  return array(
+    'api' => 2.0,
+  );
+}
+
+/**
+ * Implements of hook_views_plugins
+ */
+function views_arg_context_views_plugins() {
+  $path = drupal_get_path('module', 'views_arg_context') . '/includes';
+  return array(
+    'module' => 'views_arg_context', // This just tells our themes are elsewhere.
+    'argument default' => array(
+      'context' => array(
+        'title' => t('Active context'),
+        'handler' => 'views_plugin_argument_default_context',
+        'path' => $path,
+        'parent' => 'fixed',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements of hook_node_view
+ *
+ * (courtesy of sethcohn)
+ * Provides some out-of-the-box data to Views, and can be used as a template for 
+ * exposing other data to Views via Context
+ */
+function views_arg_context_node_view($node, $view_mode, $langcode) {
+  if ($view_mode == 'full') {
+    context_set('node', 'type', $node->type);
+    context_set('node', 'nid', $node->nid);
+
+    // avoid user 0 (anonymous), to avoid stray appearances during context
+    if ($node->uid) {
+      context_set('node', 'uid', $node->uid);
+      context_set('user', 'uid', $node->uid); // could be useful to allow both namespaces to simply view config on profile pages, etc
+    }
+
+    // less useful text items, more useful for theming than views... might be good for arg title usage though
+    context_set('node', 'name', $node->name);
+    context_set('node', 'title', $node->title);
+    
+
+    // taxonomy related items
+    $tids = array_keys(views_arg_content_node_get_terms($node));
+    context_set('taxonomy', 'tids-or', join('+', $tids));
+    context_set('taxonomy', 'tids-and', join(',', $tids));  }
+}
+
+function views_arg_context_profile2_view($entity, $view_mode, $langcode) {
+  context_set('profile', 'uid', $entity->uid);
+  context_set('profile', 'pid', $entity->pid);
+}
+
+/**
+ * Implementation of hook_user
+ */
+function views_arg_context_user($op, &$edit, &$account, $category = NULL) {
+  if($op == 'view') {
+    context_set('user', 'uid', $account->uid);
+    context_set('user', 'name', $account->name);
+    context_set('user', 'email', $account->mail);
+    context_set('user', 'language', $account->language);
+  }
+}
+
+/**
+ * Implements hook_user_view
+ */
+function views_arg_context_user_view($account, $view_mode, $langcode) {
+  if ($view_mode == 'full') {
+    context_set('user', 'uid', $account->uid);
+    context_set('user', 'name', $account->name);
+  }
+}
+
+function views_arg_content_node_get_terms($node, $key = 'tid') {
+static $terms;
+  if (!isset($terms[$node->vid][$key])) {
+    $query = db_select('taxonomy_index', 'r');
+    $t_alias = $query->join('taxonomy_term_data', 't', 'r.tid = t.tid');
+    $v_alias = $query->join('taxonomy_vocabulary', 'v', 't.vid = v.vid');
+    $query->fields( $t_alias );
+    $query->condition("r.nid", $node->nid);
+    $result = $query->execute();
+    $terms[$node->vid][$key] = array();
+    foreach ($result as $term) {
+      $terms[$node->vid][$key][$term->$key] = $term;
+      }
+  }
+return $terms[$node->vid][$key];
+}
