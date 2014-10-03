@@ -7,5 +7,5 @@ sites/*/private
 
 node_modules
 .DS_Store
-.swp
+*.swp
 npm-debug.log
