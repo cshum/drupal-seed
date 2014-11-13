@@ -1,6 +1,7 @@
 name = Site Common Feature
 core = 7.x
 package = Features
+dependencies[] = ckeditor
 dependencies[] = ctools
 dependencies[] = strongarm
 features[ckeditor_profile][] = Full
@@ -14,4 +15,3 @@ features[variable][] = jquery_update_jquery_cdn
 features[variable][] = jquery_update_jquery_version
 features[variable][] = theme_default
 features[variable][] = views_ui_show_advanced_help_warning
-features_exclude[dependencies][ckeditor] = ckeditor
