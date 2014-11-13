@@ -223,7 +223,7 @@ function site_common_update_7011(){
  */
 function site_common_update_7012(){
   $enable = array(
-    'site_feature_strongarm',
+    'site_common_feature',
   );
   module_enable($enable);
 }
@@ -352,7 +352,10 @@ function site_common_update_7020(){
 function site_common_update_7021(){
   $enable = array(
     'feeds_tamper',
-    'feeds_tamper_ui'
+    'feeds_tamper_ui',
+    'label_help',
+    'advagg',
+    'advagg_bundler'
   );
   module_enable($enable);
   $disable = array(
