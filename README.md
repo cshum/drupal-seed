@@ -1,6 +1,6 @@
 #Drupal Seed
 
-A Drupal 7 seed package that aims to automate setup tasks, preconfigured with a number of contrib modules for an efficient setup Drupal 7 project.
+A Drupal 7 seed package that aims to automate setup tasks, preconfigured with a number of contrib modules for setting up a Drupal project efficiently.
 
 ### Preparation
 Pre-requisites: PHP 5 FPM, MySQL, Nginx, Drush installed.
@@ -32,6 +32,7 @@ Site installation:
     $ cd scripts
     $ ./install.sh <site username> <site password> <db url>
     $ ./nginx.sh <nginx conf path> <port>
+    $ sudo service nginx reload
 
 Theme assets compilation:
 
@@ -40,8 +41,3 @@ Theme assets compilation:
     $ bower install
     $ npm install
     $ grunt build
-
-###Technology Stack
-
-Contrib modules used:
-
