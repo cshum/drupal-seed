@@ -5,10 +5,9 @@ if [ "$#" -ne 3 ]; then
   echo "Example: $0 admin a12345 mysql://root:a12345@localhost/site"
   echo "         $0 admin a12345 sqlite://site.db"
 else
-  while [ ! -f index.php ]
-  do
+  if [ ! -f index.php ]; then
     cd ..
-  done
+  fi
 
   # clean up
   sudo rm -rf sites/default
