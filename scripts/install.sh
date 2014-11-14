@@ -1,7 +1,9 @@
 #!/bin/sh
 
 if [ "$#" -ne 3 ]; then
-  echo "Usage: $0  <mysql db name> <db username> <db password>"
+  echo "Usage: $0  <site username> <site password> <db url>"
+  echo "Example: $0 admin a12345 mysql://root:a12345@localhost/site"
+  echo "         $0 admin a12345 sqlite://site.db"
 else
   cd ..
 
@@ -9,10 +11,10 @@ else
   sudo rm -rf sites/default
   git checkout sites/default
 
-  # on9 https://www.drupal.org/node/619542#comment-9125457
+  # https://www.drupal.org/node/619542#comment-9125457
   find . -type f -name "libffi.info" | xargs rm
 
   # install
-  drush site-install standard --account-name=admin --account-pass=admin --db-url=mysql://$1:$2@localhost/$3 -y
+  drush site-install standard --account-name=$1 --account-pass=$2 --db-url=$3 -y
   drush en site_common -y
 fi
