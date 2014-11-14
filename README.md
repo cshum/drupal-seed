@@ -10,7 +10,6 @@ Pre-requisites: PHP 5 FPM, MySQL, Nginx, Drush installed.
     $ sudo apt-get install php-apc php-pear php5-cli php5-common php5-curl php5-fpm php5-gd php5-mysql nginx
     $ sudo apt-get install drush
 
-    $ cd scripts
     $ ./install.sh <site username> <site password> <db url>
     $ ./nginx.sh <nginx conf path> <port>
     $ sudo service nginx reload
