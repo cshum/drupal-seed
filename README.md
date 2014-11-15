@@ -1,10 +1,12 @@
 #Drupal Seed
 
-A Drupal 7 seed package that aims to automate setup and deploy tasks, preconfigured with a number of contrib modules for building a Drupal project efficiently.
+Drupal is a powerful tool in many ways, but deployment has mostly been troublesome. Drupal Seed aims to automate install and deploy tasks in a continuous manner. It is also preconfigured with a number of contrib modules for building a Drupal project efficiently.
 
 ### Installation
 Pre-requisites: PHP 5 FPM, MySQL, Nginx, Drush installed.
 
+    $ sudo apt-get install mysql-server
+    $ sudo mysql_install_db
     $ mysql_secure_installation
     
     $ sudo apt-get install php-apc php-pear php5-cli php5-common php5-curl php5-fpm php5-gd php5-mysql nginx
@@ -22,7 +24,7 @@ Pre-requisites: PHP 5 FPM, MySQL, Nginx, Drush installed.
 
 ### Theme
 
-`site_theme` is a [Omega 4](https://www.drupal.org/project/omega) subtheme that levarages Sass, Compass, Grunt, Bower, Bundler, etc.
+Prior installation, theme `site_theme` is enabled by default. It is a [Omega 4](https://www.drupal.org/project/omega) subtheme that levarages Sass, Compass, Grunt, Bower, Bundler, etc.
 
     $ sudo apt-get install git ruby nodejs
     $ sudo apt-get install rubygems-integration
@@ -44,9 +46,9 @@ Pre-requisites: PHP 5 FPM, MySQL, Nginx, Drush installed.
     $ grunt build
     $ grunt watch
 
-### Seed Module
+### Deployment Module
 
-`site_common` is the seed module that automate setup and deploy tasks using `hook_update_N()` [deployment workflow](http://dcycleproject.org/blog/44/what-site-deployment-module), including 
+`site_common` is the module that automate setup and deploy tasks using `hook_update_N()` [deployment workflow](http://dcycleproject.org/blog/44/what-site-deployment-module), including 
 
 * Enabling or disabling modules, default themes
 * Views/DB clean up tasks
