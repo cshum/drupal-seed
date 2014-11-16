@@ -1,6 +1,6 @@
 #Drupal Seed
 
-Drupal is a powerful tool in many ways, but deployment has mostly been troublesome. Drupal Seed aims to automate install and deploy tasks in a continuous manner. It is also preconfigured with a number of contrib modules for building a Drupal project efficiently.
+Drupal is a powerful tool in many ways, but deployment is mostly troublesome. Drupal Seed aims to automate install and deploy tasks in a continuous manner. It is also preconfigured with a number of contrib modules for building a Drupal project efficiently.
 
 ### Installation
 Pre-requisites: PHP 5 FPM, MySQL, Nginx, Drush installed.

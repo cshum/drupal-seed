@@ -379,3 +379,17 @@ function site_common_update_7022(){
   // reset the variable with the new list
   variable_set('views_defaults', $views_status);
 }
+/**
+ * Enable modules
+ */
+function site_common_update_7023(){
+  $enable = array(
+    'uuid',
+    'uuid_path',
+    'uuid_features'
+  );
+  module_enable($enable);
+  $disable = array(
+  );
+  module_disable($disable);
+}
