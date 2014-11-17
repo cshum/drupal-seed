@@ -54,3 +54,12 @@ Prior installation, theme `site_theme` is enabled by default. It is a [Omega 4](
 * Views/DB clean up tasks
 
 Variables are maintained with [Feature Strongarm](https://www.drupal.org/project/strongarm) , where `site_common_feature` contains all the feature exportables of Drupal Seed. 
+
+### Notes & Tweaks
+
+* Using `admin_menu` instead of Drupal's default toolbar. Disable core `overlay`, `dashboard`, `comment`
+* Updated to jQuery 1.10 for site theme using `jquery_update`
+* Using `adminimal` as default admin theme
+* `webform` is not included. Use `entityform` for form building. You can apply `views` and `rules` to do many stuffs.
+* Empty blocks except content by default.
+* `panels` is not included. Use `context` with `blocks` reactions for dynamic layout.
