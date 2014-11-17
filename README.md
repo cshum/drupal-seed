@@ -1,6 +1,6 @@
 #Drupal Seed
 
-Drupal is a powerful tool in many ways, but deployment is mostly troublesome. Drupal Seed aims to automate install and deploy tasks in a continuous manner. It is also preconfigured with a number of contrib modules for building a Drupal project efficiently.
+Drupal is a powerful tool in many ways, but deployment is mostly troublesome. Drupal Seed aims to automate install and deploy tasks in a continuous manner. It is also pre-configured with a number of contrib modules for building a Drupal project efficiently.
 
 ### Installation
 Pre-requisites: PHP 5 FPM, MySQL, Nginx, Drush installed.
@@ -20,7 +20,6 @@ Pre-requisites: PHP 5 FPM, MySQL, Nginx, Drush installed.
 `install.sh` cleans up current site installation and automate setup process.
 
 `nginx.sh` generates a Nginx config of the site.
-
 
 ### Theme
 
@@ -48,18 +47,14 @@ Prior installation, theme `site_theme` is enabled by default. It is a [Omega 4](
 
 ### Deployment Module
 
-`site_common` is the module that automate setup and deploy tasks using `hook_update_N()` [deployment workflow](http://dcycleproject.org/blog/44/what-site-deployment-module), including 
-
-* Enabling or disabling modules, default themes
-* Views/DB clean up tasks
-
+`site_common` is the module that automate setup and deploy tasks using `hook_update_N()` [deployment workflow](http://dcycleproject.org/blog/44/what-site-deployment-module).
 Variables are maintained with [Feature Strongarm](https://www.drupal.org/project/strongarm) , where `site_common_feature` contains all the feature exportables of Drupal Seed. 
 
-### Notes & Tweaks
+####Pre-configured tweaks:
 
 * Using `admin_menu` instead of Drupal's default toolbar. Disable core `overlay`, `dashboard`, `comment`
 * Updated to jQuery 1.10 for site theme using `jquery_update`
 * Using `adminimal` as default admin theme
-* `webform` is not included. Use `entityform` for form building. You can apply `views` and `rules` to do many stuffs.
+* `entityform` for form building. You can apply `views` and `rules` to do many stuffs.
 * Empty blocks except content by default.
-* `panels` is not included. Use `context` with `blocks` reactions for dynamic layout.
+* `context` with `blocks` reactions for dynamic layout.
