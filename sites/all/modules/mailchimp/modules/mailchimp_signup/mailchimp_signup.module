@@ -39,6 +39,8 @@ function mailchimp_signup_menu() {
     if (intval($signup->mode) == MAILCHIMP_SIGNUP_PAGE || intval($signup->mode) == MAILCHIMP_SIGNUP_BOTH) {
       $items[$signup->settings['path']] = array(
         'title' => $signup->title,
+        'title callback' => 'mailchimp_signup_title',
+        'title arguments' => array($signup->identifier()),
         'page callback' => 'mailchimp_signup_page',
         'page arguments' => array($signup->identifier()),
         'access callback' => 'user_access',
@@ -48,6 +50,14 @@ function mailchimp_signup_menu() {
     }
   }
   return $items;
+}
+
+/**
+ * callback function for translatable title
+ */
+function mailchimp_signup_title($signup_id){
+  $signup = mailchimp_signup_load($signup_id);
+  return mailchimp_signup_tt("field:mailchimp_signup:form:$signup->mcs_id:title", $signup->title);
 }
 
 /**
@@ -92,7 +102,7 @@ function mailchimp_signup_block_view($delta = '') {
   $signup = mailchimp_signup_load($delta);
   if ($signup) {
     $block = array(
-      'subject' => $signup->title,
+      'subject' => check_plain($signup->title),
       'content' => drupal_get_form('mailchimp_signup_subscribe_block_' . $signup->name . '_form', $signup, 'mailchimp_signup_block'),
     );
   }
@@ -167,7 +177,7 @@ function mailchimp_signup_entity_info() {
       'uri callback' => 'entity_class_uri',
       'fieldable' => FALSE,
       'exportable' => TRUE,
-      'label callback' => 'entity_class_label',
+      'label callback' => 'mailchimp_signup_entity_info_label',
       'module' => 'mailchimp_signup',
       'entity keys' => array(
         'id' => 'mcs_id',
@@ -195,6 +205,13 @@ function mailchimp_signup_entity_info() {
   );
 
   return $entities;
+}
+
+/**
+ * Entity label callback.
+ */
+function mailchimp_signup_entity_info_label($entity, $entity_type) {
+  return empty($entity) ? 'New MailChimp Signup' : $entity->title;
 }
 
 /**
@@ -244,31 +261,38 @@ function mailchimp_signup_forms($form_id, $args) {
 function mailchimp_signup_subscribe_form($form, &$form_state, $signup, $type) {
   $form['#attributes'] = array('class' => array('mailchimp-signup-subscribe-form'));
   $form['description'] = array(
-    '#markup' => $signup->settings['description'],
+    '#markup' => mailchimp_signup_tt("field:mailchimp_signup:form:$signup->mcs_id:description", filter_xss($signup->settings['description'])),
+
+    '#prefix' => '<div class="mailchimp-signup-subscribe-form-description">',
+    '#suffix' => '</div>'
   );
   $form['mailchimp_lists'] = array('#tree' => TRUE);
   $lists = mailchimp_get_lists($signup->mc_lists);
-  $multiple_lists = (count($lists) != 1);
+  $lists_count = (!empty($lists)) ? count($lists) : 0;
+
+  if (empty($lists)) {
+    drupal_set_message('The subscription service is currently unavailable. Please try again later.', 'warning');
+  }
 
   $list = array();
-  if ($multiple_lists) {
+  if ($lists_count > 1) {
     foreach ($lists as $list) {
       // Wrap in a div:
-      $wrapper_key = 'mailchimp_' . $list['web_id'];
+      $wrapper_key = 'mailchimp_' . $list->id;
       $form['mailchimp_lists'][$wrapper_key] = array(
-        '#prefix' => '<div id="mailchimp-newsletter-' . $list['web_id'] . '" class="mailchimp-newsletter-wrapper">',
+        '#prefix' => '<div id="mailchimp-newsletter-' . $list->id . '" class="mailchimp-newsletter-wrapper">',
         '#suffix' => '</div>',
       );
       $form['mailchimp_lists'][$wrapper_key]['subscribe'] = array(
         '#type' => 'checkbox',
-        '#title' => $list['name'],
-        '#return_value' => $list['id'],
+        '#title' => $list->name,
+        '#return_value' => $list->id,
         '#default_value' => 0,
       );
-      if ($signup->settings['include_interest_groups'] && isset($list['intgroups'])) {
+      if ($signup->settings['include_interest_groups'] && isset($list->intgroups)) {
         $form['mailchimp_lists'][$wrapper_key]['interest_groups'] = array(
           '#type' => 'fieldset',
-          '#title' => t('Interest Groups for %label', array('%label' => $list['name'])),
+          '#title' => t('Interest Groups for %label', array('%label' => $list->name)),
           '#states' => array(
             'invisible' => array(
               ':input[name="mailchimp_lists[' . $wrapper_key . '][subscribe]"]' => array('checked' => FALSE),
@@ -281,29 +305,50 @@ function mailchimp_signup_subscribe_form($form, &$form_state, $signup, $type) {
   }
   else {
     $list = reset($lists);
-    if ($signup->settings['include_interest_groups'] && isset($list['intgroups'])) {
+    if ($signup->settings['include_interest_groups'] && isset($list->intgroups)) {
       $form['mailchimp_lists']['#weight'] = 9;
       $form['mailchimp_lists']['interest_groups'] = mailchimp_interest_groups_form_elements($list);
     }
   }
   $form['mergevars'] = array(
-    '#prefix' => '<div id="mailchimp-newsletter-' . $list['web_id'] . '-mergefields" class="mailchimp-newsletter-mergefields">',
+    '#prefix' => '<div id="mailchimp-newsletter-' . $list->id . '-mergefields" class="mailchimp-newsletter-mergefields">',
     '#suffix' => '</div>',
     '#tree' => TRUE,
   );
   foreach ($signup->settings['mergefields'] as $tag => $mergevar) {
     if (!empty($mergevar)) {
+      $mergevar->name = mailchimp_signup_tt("field:mailchimp_signup:form:$signup->mcs_id:mergefield:$tag", $mergevar->name);
       $form['mergevars'][$tag] = mailchimp_insert_drupal_form_tag($mergevar);
+      if (empty($lists)) {
+        $form['mergevars'][$tag]['#disabled'] = TRUE;
+      }
     }
   }
 
-  $form['submit'] = array(
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#weight' => 10,
-    '#value' => $signup->settings['submit_button'],
+    '#value' => mailchimp_signup_tt("field:mailchimp_signup:form:$signup->mcs_id:submit_button", $signup->settings['submit_button']),
+    '#disabled' => (empty($lists)),
   );
 
   return $form;
+}
+
+/**
+ * Validation handler for mailchimp_signup_subscribe_form.
+ */
+function mailchimp_signup_subscribe_form_validate($form, &$form_state) {
+  $signup = reset($form_state['build_info']['args']);
+  if (count($signup->mc_lists) > 1) {
+    foreach ($form_state['values']['mailchimp_lists'] as $list) {
+      if ($list['subscribe']) {
+        return;
+      }
+    }
+    form_set_error('mailchimp_lists', t("Please select at least one list to subscribe to."));
+  }
 }
 
 /**
@@ -314,8 +359,8 @@ function mailchimp_signup_subscribe_form_submit($form, &$form_state) {
   $list_details = mailchimp_get_lists($signup->mc_lists);
   $subscribe_lists = array();
   // Filter out blank fields so we don't erase values on the Mailchimp side.
-  $merge_values = array_filter($form_state['values']['mergevars']);
-  $email = $merge_values['EMAIL'];
+  $mergevars = array_filter($form_state['values']['mergevars']);
+  $email = $mergevars['EMAIL'];
   // If we only have one list we won't have checkbox values to investigate:
   if (count($signup->mc_lists) == 1) {
     $subscribe_lists[0] = array(
@@ -335,22 +380,22 @@ function mailchimp_signup_subscribe_form_submit($form, &$form_state) {
   // Loop through the selected lists and try to subscribe:
   foreach ($subscribe_lists as $list_choices) {
     $list_id = $list_choices['subscribe'];
-    $mergevars = $merge_values;
-    if (isset($list_choices['interest_groups'])) {
-      $mergevars['GROUPINGS'] = mailchimp_reformat_groupings($list_choices['interest_groups']);
-    }
-    $result = mailchimp_subscribe($list_id, $email, $mergevars, $signup->settings['doublein'], $signup->settings['send_welcome']);
+    $interests = (isset($list_choices['interest_groups'])) ? $list_choices['interest_groups'] : array();
+    $result = mailchimp_subscribe($list_id, $email, $mergevars, $interests, $signup->settings['doublein']);
+    // Let other modules act on the results in hook_form_alter.
+    $form_state['mailchimp_results'] = $result;
     if (empty($result)) {
       drupal_set_message(t('There was a problem with your newsletter signup to %list.', array(
-        '%list' => $list_details[$list_id]['name'],
+        '%list' => $list_details[$list_id]->name,
       )), 'warning');
     }
     else {
-      $successes[] = $list_details[$list_id]['name'];
+      $successes[] = $list_details[$list_id]->name;
     }
   }
-  if (count($successes) && strlen($signup->settings['confirmation_message'])) {
-    drupal_set_message($signup->settings['confirmation_message'], 'status');
+  if (count($successes) && isset($signup->settings['confirmation_message']) && strlen($signup->settings['confirmation_message'])) {
+    $message = mailchimp_signup_tt("field:mailchimp_signup:form:$signup->mcs_id:confirmation_message", check_plain($signup->settings['confirmation_message']));
+    drupal_set_message($message, 'status');
   }
   if (!empty($signup->settings['destination'])) {
     $form_state['redirect'] = $signup->settings['destination'];
@@ -366,4 +411,63 @@ function mailchimp_signup_entity_delete($entity, $type) {
       menu_rebuild();
     }
   }
+}
+
+/**
+ * Wrapper function for i18n_string() if i18nstrings enabled.
+ */
+function mailchimp_signup_tt($name, $string, $langcode = NULL, $update = FALSE) {
+  if (function_exists('i18n_string')) {
+    $options = array(
+      'langcode' => $langcode,
+      'update' => $update,
+    );
+    return i18n_string($name, $string, $options);
+  }
+  else {
+    return $string;
+  }
+}
+
+/**
+ * Implements hook_feeds_node_processor_targets_alter().
+ */
+function mailchimp_signup_feeds_processor_targets_alter(&$targets, $type, $bundle) {
+  // Create target for all MailChimp list subscription fields.
+  $field_info = field_info_field_types('mailchimp_lists_subscription');
+  $field_instances = field_info_instances($type, $bundle);
+  foreach ($field_instances as $field_name => $field) {
+    if ($field['widget']['type'] == $field_info['default_widget']) {
+      $targets[$field_name . ':subscribe'] = array(
+        'name' => t($field['label']),
+        'description' => t('MailChimp subscription field.'),
+        'callback' => 'mailchimp_signup_set_target',
+      );
+    }
+  }
+}
+
+/**
+ * Mapping callback.
+ */
+function mailchimp_signup_set_target($source, $entity, $target, $value, $mapping) {
+  list($field_name, $option) = explode(':', $target . ':value');
+
+  $field = isset($entity->$field_name) ? $entity->$field_name : array('und' => array());
+
+  $delta = 0;
+  if (is_array($value)) {
+    foreach ($value as $each_value) {
+      if (is_object($each_value) && ($each_value instanceof FeedsElement)) {
+        $each_value = $value->getValue();
+        $field['und'][$delta] = array($option => $each_value);
+      }
+      $delta++;
+    }
+  }
+  else {
+    $field['und'][$delta] = array($option => $value);
+  }
+
+  $entity->$field_name = $field;
 }

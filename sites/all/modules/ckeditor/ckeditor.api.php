@@ -44,16 +44,28 @@ function hook_ckeditor_plugin() {
       'name' => 'plugin_name',
       // Description of the plugin - it would be displayed in the plugins management section of profile settings.
       'desc' => t('Plugin description'),
-      // The full path to the CKEditor plugins directory, with the trailing slash.
-      'path' => drupal_get_path('module', 'my_module') . '/plugin_dir/',
+      // The full URL to the CKEditor plugins directory, with the trailing slash.
+      'path' => base_path() . drupal_get_path('module', 'my_module') . '/plugin_dir/',
       'buttons' => array(
         'button_name' => array(
-          'icon' => 'path to button icon',
+          // Path to an icon relative to the plugins folder.
+          'icon' => 'icon/plugin_name.png',
           'label' => 'Button Label',
         )
       )
     )
   );
+}
+
+/**
+ * Hook to extend/change CKEditor plugins.
+ *
+ * @param $plugins
+ *   An associative array of plugins.
+ */
+function hook_ckeditor_plugin_alter(&$plugins) {
+  // Remove a plugin button.
+  unset($plugins['plugin_name']['buttons']['button']);
 }
 
 /**
@@ -102,4 +114,13 @@ function hook_ckeditor_settings_alter(&$settings, $conf) {
  */
 function hook_ckeditor_default_settings_alter(&$settings) {
   $settings['show_toggle'] = 'f';
+}
+
+/**
+ * Hook to extend CKEditor security allowed tags list.
+ *
+ * This hook is invoked from ckeditor_filter_xss() where text is filtered from potentially insecure tags.
+ */
+function hook_ckeditor_filter_xss_allowed_tags() {
+  // Return an array of additional allowed tags
 }

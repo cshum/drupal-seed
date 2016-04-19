@@ -74,10 +74,13 @@ function bg_image_ui_init() {
 
 function bg_image_ui_paths_form($form, &$form_state) {
 
+  // Link to settings page
+  $settings_page_link = l('settings page', 'admin/config/content/background_image');
+
   // If a node type and field has not been configured
   if (!variable_get('bg_image_node_type', '') || !variable_get('bg_image_node_field', '')) {
     $form['settings_first_msg'] = array(
-      '#markup' => 'You must specify a content type and field on the <a href="/admin/config/content/background_image">settings page</a> before you can set background images. Once configured you will be able to reference specific nodes here, whose image field will be used to set the background image.',
+      '#markup' => "You must specify a content type and field on the $settings_page_link before you can set background images. Once configured you will be able to reference specific nodes here, whose image field will be used to set the background image.",
     );
     return $form;
   }
@@ -88,7 +91,7 @@ function bg_image_ui_paths_form($form, &$form_state) {
   );
 
   $form['description'] = array(
-    '#markup' => t('<p class="bg-image-paths-description">Apply a background image on a particular path. The background image will be applied using css. The default bg image css settings configured on the <a href="/admin/config/content/background_image">settings page</a> will be used.</p><p>Only one background image will be applied to a page. Items appearing at the top of the list will take precedence over items lower in the list. So, a background image set to the path "node/1" at the top of the list would be applied before an image set to "node/*" at the bottom of the list.</p>'),
+    '#markup' => t('<p class="bg-image-paths-description">Apply a background image on a particular path. The background image will be applied using css. The default bg image css settings configured on the ' . $settings_page_link . ' will be used.</p><p>Only one background image will be applied to a page. Items appearing at the top of the list will take precedence over items lower in the list. So, a background image set to the path "node/1" at the top of the list would be applied before an image set to "node/*" at the bottom of the list.</p>'),
   );
 
   $paths = bg_image_ui_get_paths();

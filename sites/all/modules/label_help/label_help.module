@@ -33,14 +33,46 @@ function label_help_form_alter(&$form, &$form_state, $form_id) {
         // $form[$key][$item['#language']][0]['#theme_options'] has to be set to get
         // this working for textarea fields, and
         // form[$key][$item['#language']][0]['value']['#theme_options'] has to be set
-        // to get this working for one-line text fields.
-        $form[$key][$item['#language']][0]['#theme_options'] = $form[$key][$item['#language']][0]['value']['#theme_options'] = $theme_option;
+        // to get this working for one-line text fields, and
+        // form[$key][$item['#language']][0]['default']['#theme_options'] has to be set
+        // to get this working for some other fields.
+        if (isset($form[$key][$item['#language']][0]['default'])) {
+          $form[$key][$item['#language']][0]['default']['#theme_options'] = $theme_option;
+        }
+        elseif (isset($form[$key][$item['#language']][0]['value'])) {
+          $form[$key][$item['#language']][0]['value']['#theme_options'] = $theme_option;
+        }
+        // Oh, and here's what you do for entity references. That's different too. Sheesh!
+        elseif (isset($form[$key][$item['#language']][0]['target_id'])) {
+          $form[$key][$item['#language']][0]['target_id']['#theme_options'] = $theme_option;
+        }
+        // One more for cshs module.
+        elseif (isset($form[$key][$item['#language']][0]['tid'])) {
+          $form[$key][$item['#language']][0]['tid']['#theme_options'] = $theme_option;
+        }
+        else {
+          $form[$key][$item['#language']][0]['#theme_options'] = $theme_option;
+        }
       }
       // Move comments to the top for other field forms that
       // are specifically configured.
       else {
         $form[$key][$item['#language']]['#theme_options'] = $form[$key][$item['#language']]['value']['#theme_options'] = $theme_option;
       }
+    }
+  }
+}
+
+/**
+ * Implements hook_orm_profile2_form_alter().
+ * 
+ * @see profile2.tpl.php
+ * @see https://drupal.org/project/profile2
+ */
+function label_help_form_profile2_form_alter(&$form, &$form_state) {
+  foreach ($form as $key => $item) {
+    if (is_array($item) && isset($form[$key]['#entity_type']) && $form[$key]['#entity_type'] == 'profile2') {
+      label_help_form_alter($form[$key], $form_state, 'profile2');
     }
   }
 }

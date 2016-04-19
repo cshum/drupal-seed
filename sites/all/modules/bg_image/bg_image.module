@@ -514,8 +514,8 @@ function bg_image_node_options($include_nid = TRUE, $include_random = TRUE) {
     }
   }
   if (!$node_options) {
-    $node_type_path = str_replace('_', '-', $node_type);
-    drupal_set_message("You don't have any $node_type nodes created yet. You must <a href=\"/node/add/$node_type_path\">create at least one $node_type node</a> before you can assign background images to pages.",'warning');
+    $node_type_path = base_path() . 'node/add/' . str_replace('_', '-', $node_type);
+    drupal_set_message("You don't have any $node_type nodes created yet. You must <a href=\"$node_type_path\">create at least one $node_type node</a> before you can assign background images to pages.",'warning');
     return FALSE;
   }
   else {

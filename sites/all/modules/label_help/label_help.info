@@ -6,9 +6,9 @@ core = 7.x
 files[] = label_help.module
 
 
-; Information added by Drupal.org packaging script on 2014-03-30
-version = "7.x-1.1"
+; Information added by Drupal.org packaging script on 2015-01-17
+version = "7.x-1.2"
 core = "7.x"
 project = "label_help"
-datestamp = "1396200245"
+datestamp = "1421533236"
 

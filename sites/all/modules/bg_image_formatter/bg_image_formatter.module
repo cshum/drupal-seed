@@ -10,6 +10,7 @@ function bg_image_formatter_field_formatter_info() {
       'field types' => array('image', 'imagefield_crop'),
       'settings' => array(
         'image_style' => '',
+        'multiple' => FALSE,
         'css_settings' => array(
           'bg_image_selector' => 'body',
           'bg_image_color' => '#FFFFFF',
@@ -36,18 +37,6 @@ function bg_image_formatter_field_formatter_settings_form($field, $instance, $vi
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
 
-  $tokens_mapping = token_get_entity_mapping();
-  $entity_types = array_keys($field['bundles']);
-
-  $tokens_list = array();
-  foreach($tokens_mapping as $token_map => $entity_map) {
-    foreach ($entity_types as $entity_type) {
-      if ($entity_type == $entity_map) {
-        $tokens_list[] = $token_map;
-      }
-    }
-  }
-
   // Options for repeating the image
   $repeat_options = bg_image_css_repeat_options();
 
@@ -70,6 +59,13 @@ function bg_image_formatter_field_formatter_settings_form($field, $instance, $vi
     )
   );
 
+  // background-size:cover suppor for IE8
+  $element['multiple'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable multiple image?'),
+    '#default_value' => $settings['multiple'],
+  );
+
   // Fieldset for css settings
   $element['css_settings'] = array(
     '#type' => 'fieldset',
@@ -78,32 +74,46 @@ function bg_image_formatter_field_formatter_settings_form($field, $instance, $vi
   );
   // The selector for the background property
   $element['css_settings']['bg_image_selector'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Selector'),
-    '#description' => t('A valid CSS selector that will be used to apply the background image.'),
+    '#type' => 'textarea',
+    '#title' => t('Selector(s)'),
+    '#description' => t('A valid CSS selector that will be used to apply the background image. One per line. If the field is multiple and the option <em>Multiple</em> is enabled, the first line will be applied to the first value, the second to the second value... and so on.'),
     '#default_value' => $settings['css_settings']['bg_image_selector'],
-  );
-  // Fieldset for tokens
-  $element['css_settings']['tokens'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Available tokens'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE
-  );
-  // Tokens available
-  $element['css_settings']['tokens']['list'] = array(
-    '#theme' => 'token_tree',
-    '#token_types' => $tokens_list,
-    '#global_types' => TRUE,
-    '#click_insert' => TRUE
   );
   // The selector for the background property
   $element['css_settings']['bg_image_color'] = array(
-    '#type' => 'textfield',
+    '#type' => 'textarea',
     '#title' => t('Color'),
-    '#description' => t('The background color formatted as any valid css color format (e.g. hex, rgb, text, hsl) [<a href="http://www.w3schools.com/css/pr_background-color.asp">css property: background-color</a>]'),
+    '#description' => t('The background color formatted as any valid css color format (e.g. hex, rgb, text, hsl) [<a href="@url">css property: background-color</a>]. One per line. If the field is multiple and the option <em>Multiple</em> is enabled, the first line will be applied to the first value, the second to the second value... and so on.', array('@url' => 'http://www.w3schools.com/css/pr_background-color.asp')),
     '#default_value' => $settings['css_settings']['bg_image_color'],
   );
+  if (module_exists('token') && !empty($field)) {
+    $tokens_mapping = token_get_entity_mapping();
+    $entity_types = array_keys($field['bundles']);
+
+    $tokens_list = array();
+    foreach ($tokens_mapping as $token_map => $entity_map) {
+      foreach ($entity_types as $entity_type) {
+        if ($entity_type == $entity_map) {
+          $tokens_list[] = $token_map;
+        }
+      }
+    }
+
+    // Fieldset for tokens
+    $element['css_settings']['tokens'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Available tokens'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+    );
+    // Tokens available
+    $element['css_settings']['tokens']['list'] = array(
+      '#theme' => 'token_tree',
+      '#token_types' => $tokens_list,
+      '#global_types' => TRUE,
+      '#click_insert' => TRUE
+    );
+  }
   // The selector for the background property
   $element['css_settings']['bg_image_x'] = array(
     '#type' => 'textfield',
@@ -186,6 +196,14 @@ function bg_image_formatter_field_formatter_settings_summary($field, $instance, 
     $summary[] = t('Original image URL');
   }
 
+  if (isset($settings['css_settings']['bg_image_selector'])) {
+    $selectors = explode(PHP_EOL, trim($settings['css_settings']['bg_image_selector']));
+    $selectors = array_map(function($value) {
+      return trim($value, ',');
+    }, $selectors);
+    $summary[] = t('Selectors: @selectors', array('@selectors' => implode(',', $selectors)));
+  }
+
   return implode('<br />', $summary);
 }
 
@@ -198,13 +216,40 @@ function bg_image_formatter_field_formatter_view($entity_type, $entity, $field, 
   $css_settings = $settings['css_settings'];
 
   $image_style = $settings['image_style'] ? $settings['image_style'] : NULL;
+  $selectors = explode(PHP_EOL, trim($css_settings['bg_image_selector']));
+  $colors = explode(PHP_EOL, trim($css_settings['bg_image_color']));
 
-  $tokens_mapping = array_flip(token_get_entity_mapping());
-  $css_settings['bg_image_selector'] = token_replace($css_settings['bg_image_selector'], array($tokens_mapping[$entity_type] => $entity));
+  // Cleanup
+  $selectors = array_map(function($value) {
+    return trim($value, ',');
+  }, $selectors);
+  $colors = array_map(function($value) {
+    return trim($value);
+  }, $colors);
+
+  if (module_exists('token')) {
+    $tokens_mapping = array_flip(token_get_entity_mapping());
+    // Replace the tokens.
+    $selectors = array_map(function($selector) use ($tokens_mapping, $entity_type, $entity) {
+      return token_replace($selector, array($tokens_mapping[$entity_type] => $entity));
+    }, $selectors);
+
+    $colors = array_map(function($color) use ($tokens_mapping, $entity_type, $entity) {
+      return token_replace($color, array($tokens_mapping[$entity_type] => $entity));
+    }, $colors);
+  }
 
   switch ($display['type']) {
     case 'bg_image_formatter':
       foreach ($items as $delta => $item) {
+        if ($settings['multiple']) {
+          $css_settings['bg_image_selector'] = $selectors[$delta%count($selectors)];
+          $css_settings['bg_image_color'] = $colors[$delta%count($colors)];
+        } else {
+          $css_settings['bg_image_selector'] = implode(',', $selectors);
+          $css_settings['bg_image_color'] = implode('', $colors);
+        }
+
         $context = array('entity_type' => $entity_type, 'entity' => $entity, 'item' => $item);
         // Let other module alter the CSS settings by implementing the hook:
         // hook_bg_image_formatter_css_settings_alter().

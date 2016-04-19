@@ -20,6 +20,6 @@ class context_reaction_addcss extends context_reaction_addassets_base {
   function __construct($plugin, $info) {
     parent::__construct($plugin, $info);
     $this->title = t('CSS from Themes');
-    $this->search_type = 'css';
+    $this->search_type = 'css|sass|scss|less';
   }
 }

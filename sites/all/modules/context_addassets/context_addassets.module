@@ -20,8 +20,9 @@ function _context_addassets_admin_path() {
     if (!isset($addassets_admin_path) or !trim($addassets_admin_path)) {
       $addassets_admin_path = 'admin/structure/context/add-assets';
     }
-  }
   return $addassets_admin_path;
+  }
+  else return;
 }
 
 /**
@@ -130,11 +131,11 @@ function context_addassets_ctools_plugin_api($module, $api) {
  */
 function context_addassets_context_plugins() {
   $plugins = array();
-  
-  /** 
+
+  /**
   * Reactions
   */
-  
+
   // Theme Assets
   // - CSS
   $plugins['context_reaction_addcss'] = array(
@@ -145,6 +146,17 @@ function context_addassets_context_plugins() {
       'parent' => 'context_reaction',
     ),
   );
+  // - LESS
+  if (module_exists('less')) {
+    $plugins['context_reaction_addless'] = array(
+      'handler' => array(
+        'path' => drupal_get_path('module', 'context_addassets') . '/plugins',
+        'file' => 'context_reaction_addless.inc',
+        'class' => 'context_reaction_addless',
+        'parent' => 'context_reaction',
+      ),
+    );
+  }
   // - JS
   $plugins['context_reaction_addjs'] = array(
     'handler' => array(
@@ -230,16 +242,29 @@ function context_addassets_context_registry() {
       'plugin' => 'context_reaction_addjs_path'
     )
   );
+
+  if (module_exists('less')) {
+    $registry['reactions']['less'] = array(
+      'plugin' => 'context_reaction_addless'
+    );
+  }
+
   return $registry;
 }
 
 /**
  * Implements hook_context_page_reaction().
+ * @todo Generalize this so it's more pluggable
  */
 function context_addassets_context_page_reaction() {
   // theme
   if ($plugin = context_get_plugin('reaction', 'css')) {
     $plugin->execute();
+  }
+  if (module_exists('less')) {
+    if ($plugin = context_get_plugin('reaction', 'less')) {
+      $plugin->execute();
+    }
   }
   if ($plugin = context_get_plugin('reaction', 'js')) {
     $plugin->execute();
@@ -287,6 +312,7 @@ function _context_addassets_scandir($filetype = NULL, $where='themes') {
   // Future setting to include all themes
   $include_all = FALSE;
 
+  $mask = "/.+\." . $filetype . '/';
   switch ($where) {
 
     // If want to find assets in modules.
@@ -296,9 +322,7 @@ function _context_addassets_scandir($filetype = NULL, $where='themes') {
       $modules = variable_get('context_addassets_index_modules', array());
       foreach ($modules as $path) {
         if (!$path) continue;
-        $dir = realpath('.') . base_path() . $path;
-        $mask = ".+\." . $filetype;
-        $files_raw[$path] = file_scan_directory($dir, $mask);
+        $files_raw[$path] = file_scan_directory($path, $mask);
       }
       break;
 
@@ -309,9 +333,7 @@ function _context_addassets_scandir($filetype = NULL, $where='themes') {
 
       // Grab every set file path
       while ($path = variable_get('context_addassets_index_path' . $path_index, NULL)) {
-        $dir = realpath('.') . base_path() . $path;
-				$mask = "/.+\." . $filetype."/";
-        $files_raw[$path] = file_scan_directory($dir, $mask);
+        $files_raw[$path] = file_scan_directory($path, $mask);
         $path_index += 1;
       }
       break;
@@ -344,7 +366,7 @@ function _context_addassets_scandir($filetype = NULL, $where='themes') {
           );
         }
       }
-      // Scan $selected_themes for css files.
+      // Scan $selected_themes for given filetype.
       foreach ($selected_themes as $theme) {
         $dir = $theme['path'];
         $name = $theme['name'];
@@ -354,7 +376,7 @@ function _context_addassets_scandir($filetype = NULL, $where='themes') {
       break;
 
   } // switch $where
-  
+
   // No files found.
   if (isset($files_raw)) {
     if (is_array($files_raw)) {

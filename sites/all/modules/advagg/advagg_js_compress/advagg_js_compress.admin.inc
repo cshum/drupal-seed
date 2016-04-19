@@ -9,6 +9,7 @@
  * Form builder; Configure advagg settings.
  *
  * @ingroup forms
+ *
  * @see system_settings_form()
  */
 function advagg_js_compress_admin_settings_form($form, $form_state) {
@@ -18,29 +19,12 @@ function advagg_js_compress_admin_settings_form($form, $form_state) {
   $form = array();
   if (variable_get('advagg_cache_level', ADVAGG_CACHE_LEVEL) < 0) {
     $form['advagg_devel_msg'] = array(
-      '#markup' => '<p>' . t('The settings below will not have any effect because AdvAgg is currently in <a href="@devel">development mode</a>. Once the cache settings have been set to normal or agressive, JS minification will take place.', array('@devel' => url($config_path . '/advagg', array('fragment' => 'edit-advagg-cache-level')))) . '</p>',
+      '#markup' => '<p>' . t('The settings below will not have any effect because AdvAgg is currently in <a href="@devel">development mode</a>. Once the cache settings have been set to normal or aggressive, JS minification will take place.', array('@devel' => url($config_path . '/advagg', array('fragment' => 'edit-advagg-cache-level')))) . '</p>',
     );
   }
 
-  $description = '';
-  $options = array(
-    0 => t('Disabled'),
-    1 => t('JSMin+'),
-    // 2 => t('Packer'),
-  );
-  if (function_exists('jsmin')) {
-    $options[3] = t('JSMin');
-    $description .= t('JSMin is the C complied version and is about 25 times faster. Recommend using it.');
-  }
-  else {
-    if (!defined('PHP_VERSION_ID') || PHP_VERSION_ID < 50310) {
-      $link = 'http://www.ypass.net/software/php_jsmin/';
-    }
-    else {
-      $link = 'https://github.com/sqmk/pecl-jsmin/';
-    }
-    $description .= t('You can use the much faster C version of JSMin by installing the <a href="@php_jsmin">JSMin PHP Extension</a> on this server.', array('@php_jsmin' => $link));
-  }
+  list($options, $description) = advagg_js_compress_configuration();
+
   $form['advagg_js_compressor'] = array(
     '#type' => 'radios',
     '#title' => t('File Compression: Select a Compressor'),
@@ -49,21 +33,21 @@ function advagg_js_compress_admin_settings_form($form, $form_state) {
     '#description' => filter_xss($description),
   );
 
-  $form['advagg_js_inline_compressor'] = array(
+  $form['advagg_js_compress_inline'] = array(
     '#type' => 'radios',
     '#title' => t('Inline Compression: Select a Compressor'),
-    '#default_value' => variable_get('advagg_js_inline_compressor', ADVAGG_JS_INLINE_COMPRESSOR),
+    '#default_value' => variable_get('advagg_js_compress_inline', ADVAGG_JS_COMPRESS_INLINE),
     '#options' => $options,
     '#description' => filter_xss($description),
   );
-  $form['advagg_js_inline_compress_if_not_cacheable'] = array(
+  $form['advagg_js_compress_inline_if_not_cacheable'] = array(
     '#type' => 'checkbox',
     '#title' => t('Inline Compression: Use even if this page is not cacheable'),
-    '#default_value' => variable_get('advagg_js_inline_compress_if_not_cacheable', ADVAGG_JS_INLINE_COMPRESS_IF_NOT_CACHEABLE),
+    '#default_value' => variable_get('advagg_js_compress_inline_if_not_cacheable', ADVAGG_JS_COMPRESS_INLINE_IF_NOT_CACHEABLE),
     '#description' => t('By checking this box, all Inline JavaScript will be compressed regardless of the state of <a href="@link">drupal_page_is_cacheable()</a>. If the C complied version of JSMin is enabled, this option should not slow down page generation that much; if you are using JSMin+ I recommend keeping this disabled.', array('@link' => 'http://api.drupal.org/api/drupal/includes!bootstrap.inc/function/drupal_page_is_cacheable/7')),
     '#states' => array(
       'disabled' => array(
-        ':input[name="advagg_js_inline_compressor"]' => array('value' => "0"),
+        ':input[name="advagg_js_compress_inline"]' => array('value' => "0"),
       ),
     ),
   );
@@ -72,11 +56,24 @@ function advagg_js_compress_admin_settings_form($form, $form_state) {
     '#type' => 'checkbox',
     '#title' => t('Use Packer on non GZip JS Aggregates'),
     '#default_value' => variable_get('advagg_js_compress_packer', ADVAGG_JS_COMPRESS_PACKER),
-    '#description' => t('If enabled the non gzip version of JS files will be compressed using the JS Packer. Packer works similar to gzip, thus using packer on a gzipped file does not give a big improvement in terms of bytes transfered over the wire. WARNING: This has a high chance of breaking your JS. Only Enable on production after testing the non gzipped version locally.'),
+    '#description' => t('If enabled the non gzip version of JS files will be compressed using the JS Packer. Packer works similar to gzip, thus using packer on a gzipped file does not give a big improvement in terms of bytes transferred over the wire. WARNING: This has a high chance of breaking your JS. Only Enable on production after testing the non gzipped version locally.'),
     '#states' => array(
       'disabled' => array(
         ':input[name="advagg_js_compressor"]' => array('value' => "0"),
       ),
+    ),
+  );
+  $form['advagg_js_compress_add_license'] = array(
+    '#type' => 'radios',
+    '#title' => t('Licensing comments'),
+    '#default_value' => variable_get('advagg_js_compress_add_license', ADVAGG_JS_COMPRESS_ADD_LICENSE),
+    '#description' => t("Stripping everything will produce somewhat better scores in
+   some automated scans but otherwise should not affect your site. Providing a link to the original source and keeping important comments is enabled by default in order to better follow the spirit of the GPL by linking to the original unminified javascript source files."),
+    '#options' => array(
+      0 => t('Strip everything'),
+      1 => t('Provide a link to the original source as a comment'),
+      2 => t('Keep important comments if the minifier supports it'),
+      3 => t('Do both; try to keep important comments and provide a link'),
     ),
   );
 
@@ -89,7 +86,7 @@ function advagg_js_compress_admin_settings_form($form, $form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  // Get filename & filename_hash.
+  // Get filename and filename_hash.
   $results = db_select('advagg_files', 'af')
     ->fields('af', array('filename'))
     ->condition('filetype', 'js')
@@ -119,6 +116,11 @@ function advagg_js_compress_admin_settings_form($form, $form_state) {
     }
   }
 
+  // No js files are found.
+  if (empty($results)) {
+    $form['per_file_settings']['#description'] = t('No JS files have been aggregated. You need to enable aggregation. No js files where found in the advagg_files table.');
+  }
+
   // Clear the cache bins on submit.
   $form['#submit'][] = 'advagg_js_compress_admin_settings_form_submit';
 
@@ -132,10 +134,7 @@ function advagg_js_compress_admin_settings_form($form, $form_state) {
  * Also remove default settings inside of the per_file_settings fieldgroup.
  */
 function advagg_js_compress_admin_settings_form_submit($form, &$form_state) {
-  $cache_bins = advagg_flush_caches();
-  foreach ($cache_bins as $bin) {
-    cache_clear_all('*', $bin, TRUE);
-  }
+  advagg_cache_clear_admin_submit();
 
   // Get current defaults.
   $file_settings = variable_get('advagg_js_compressor_file_settings', array());
@@ -143,7 +142,7 @@ function advagg_js_compress_admin_settings_form_submit($form, &$form_state) {
   // Save per file settings.
   $new_settings = array();
   foreach ($form_state['values'] as $key => $value) {
-    // Skip if not advagg_js_compressor_file_settings
+    // Skip if not advagg_js_compressor_file_settings.
     if (strpos($key, 'advagg_js_compressor_file_settings_') === FALSE) {
       continue;
     }
@@ -153,6 +152,9 @@ function advagg_js_compress_admin_settings_form_submit($form, &$form_state) {
       continue;
     }
     $new_settings[substr($key, 35)] = $value;
+
+    // Do not save this field into its own variable.
+    unset($form_state['values'][$key]);
   }
   if (!empty($new_settings) || !empty($file_settings)) {
     if (empty($new_settings)) {
