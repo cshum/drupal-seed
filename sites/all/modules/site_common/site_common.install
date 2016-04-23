@@ -259,6 +259,9 @@ function site_common_update_7014(){
 function site_common_update_7015(){
   $enable = array(
     'field_group',
+    'field_hidden',
+    'simplify',
+    'nodeaccess_userreference',
     'transliteration'
   );
   module_enable($enable);
